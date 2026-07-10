@@ -1,5 +1,834 @@
-<!DOCTYPE html> 
-<html> 
-<body> 
-<form action="upload.php" method="post" enctype="multipart/form-data"> 
-Select file to upload: <input type="file" name="fileToUpload" id="fileToUpload"> <input type="submit" value="Upload File" name="submit"> </form> </body> </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plotted — See your network, not just sketch it</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+  :root{
+    --navy: #16324F;
+    --navy-deep: #0C2136;
+    --grid-line: rgba(143, 214, 255, 0.16);
+    --grid-line-strong: rgba(143, 214, 255, 0.32);
+    --cyan: #8FD6FF;
+    --paper: #F4F1E7;
+    --paper-shadow: rgba(12, 33, 54, 0.35);
+    --ink: #23303C;
+    --ink-soft: #55606B;
+    --amber: #E8A33D;
+    --amber-deep: #C97F1E;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background: var(--navy);
+    color: var(--paper);
+    font-family: 'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,h2,h3, .mono{
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* blueprint grid background */
+  .blueprint{
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px);
+    background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px;
+    background-position: -1px -1px;
+  }
+
+  a{ color: inherit; }
+
+  .wrap{
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  /* ---------- NAV ---------- */
+  nav.wrap{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding-top: 28px;
+    padding-bottom: 28px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    font-weight:600;
+    letter-spacing: 0.04em;
+    font-size: 15px;
+    text-transform: uppercase;
+  }
+  .brand .dot{
+    width: 9px; height:9px; border-radius:50%;
+    background: var(--amber);
+    box-shadow: 0 0 0 4px rgba(232,163,61,0.18);
+  }
+  .navlink{
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    text-decoration:none;
+    border: 1px solid rgba(143,214,255,0.4);
+    padding: 8px 16px;
+    border-radius: 2px;
+    transition: all .2s ease;
+  }
+  .navlink:hover{
+    background: rgba(143,214,255,0.1);
+    border-color: var(--cyan);
+  }
+
+  /* ---------- HERO ---------- */
+  header.hero{
+    position: relative;
+    padding-top: 64px;
+    padding-bottom: 40px;
+    overflow: hidden;
+  }
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--amber);
+    border: 1px solid rgba(232,163,61,0.5);
+    padding: 6px 12px;
+    border-radius: 2px;
+    margin-bottom: 28px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:6px; height:6px;
+    background: var(--amber);
+    display:inline-block;
+  }
+
+  h1.headline{
+    font-size: clamp(34px, 5.4vw, 62px);
+    line-height: 1.06;
+    font-weight: 600;
+    margin: 0 0 26px;
+    max-width: 15ch;
+    letter-spacing: -0.01em;
+  }
+  h1.headline em{
+    font-style: normal;
+    color: var(--cyan);
+    text-decoration: underline;
+    text-decoration-color: rgba(143,214,255,0.35);
+    text-decoration-thickness: 3px;
+    text-underline-offset: 6px;
+  }
+
+  .sub{
+    font-size: 18px;
+    line-height: 1.6;
+    color: rgba(244,241,231,0.8);
+    max-width: 46ch;
+    margin: 0 0 36px;
+  }
+
+  .hero-actions{
+    display:flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .btn{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    padding: 14px 24px;
+    border-radius: 2px;
+    text-decoration: none;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary{
+    background: var(--amber);
+    color: var(--navy-deep);
+    font-weight: 600;
+    box-shadow: 0 0 0 rgba(232,163,61,0);
+  }
+  .btn-primary:hover{ transform: translateY(-2px); box-shadow: 0 8px 20px rgba(232,163,61,0.28); }
+  .btn-ghost{
+    color: var(--paper);
+    border: 1px solid rgba(244,241,231,0.35);
+  }
+  .btn-ghost:hover{ border-color: var(--paper); transform: translateY(-2px); }
+
+  /* ---------- SIGNATURE DIAGRAM ---------- */
+  .diagram-stage{
+    margin-top: 56px;
+    position: relative;
+    border: 1px solid var(--grid-line-strong);
+    background: rgba(12,33,54,0.4);
+    padding: 28px 20px 18px;
+    border-radius: 3px;
+  }
+  .diagram-stage .tag{
+    position:absolute;
+    top: -12px; left: 20px;
+    background: var(--navy);
+    padding: 0 8px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cyan);
+  }
+  svg#morph{ width:100%; height:auto; display:block; }
+
+  .scribble-path{
+    fill:none;
+    stroke: rgba(244,241,231,0.55);
+    stroke-width:2;
+    stroke-linecap:round;
+    stroke-dasharray: 4 7;
+    animation: fadeOut1 8s ease-in-out infinite;
+  }
+  .clean-line{
+    fill:none;
+    stroke: var(--cyan);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 220;
+    stroke-dashoffset: 220;
+    animation: draw 8s ease-in-out infinite, fadeIn1 8s ease-in-out infinite;
+  }
+  .clean-node{
+    fill: var(--navy);
+    stroke: var(--cyan);
+    stroke-width: 2;
+    opacity: 0;
+    animation: popIn 8s ease-in-out infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  .clean-label{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    fill: var(--paper);
+    opacity: 0;
+    animation: popIn 8s ease-in-out infinite;
+  }
+  .scribble-node{
+    fill:none;
+    stroke: rgba(244,241,231,0.55);
+    stroke-width: 1.6;
+    animation: fadeOut1 8s ease-in-out infinite;
+  }
+
+  @keyframes fadeOut1{
+    0%, 30%{ opacity: 1; }
+    48%, 100%{ opacity: 0; }
+  }
+  @keyframes fadeIn1{
+    0%, 40%{ opacity: 0; }
+    58%, 100%{ opacity: 1; }
+  }
+  @keyframes draw{
+    0%, 40%{ stroke-dashoffset: 220; }
+    75%, 100%{ stroke-dashoffset: 0; }
+  }
+  @keyframes popIn{
+    0%, 45%{ opacity: 0; transform: scale(0.4); }
+    70%, 100%{ opacity: 1; transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .scribble-path,.clean-line,.clean-node,.clean-label,.scribble-node{
+      animation: none !important;
+    }
+    .scribble-path,.scribble-node{ opacity: 0; }
+    .clean-line{ stroke-dashoffset:0; opacity:1; }
+    .clean-node,.clean-label{ opacity:1; transform:scale(1); }
+  }
+
+  /* ---------- EXHIBITS ---------- */
+  section.exhibits{
+    background: var(--paper);
+    color: var(--ink);
+    padding: 90px 0 100px;
+    position: relative;
+  }
+  section.exhibits::before{
+    content:"";
+    position:absolute; top:0; left:0; right:0; height: 8px;
+    background: repeating-linear-gradient(90deg, var(--navy) 0 14px, transparent 14px 28px);
+    opacity: 0.15;
+  }
+  .section-head{
+    max-width: 640px;
+    margin: 0 0 56px;
+  }
+  .section-kicker{
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--amber-deep);
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  .section-head h2{
+    font-size: clamp(26px, 3.4vw, 38px);
+    line-height: 1.15;
+    margin: 0 0 14px;
+    font-weight: 600;
+  }
+  .section-head p{
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .exhibit-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+  @media (max-width: 800px){
+    .exhibit-grid{ grid-template-columns: 1fr; }
+  }
+
+  .exhibit-card{
+    background: #fff;
+    border: 1px solid rgba(35,48,60,0.14);
+    box-shadow: 0 18px 40px var(--paper-shadow);
+    padding: 26px 26px 30px;
+    position: relative;
+  }
+  .exhibit-card:nth-child(1){ transform: rotate(-1.1deg); }
+  .exhibit-card:nth-child(2){ transform: rotate(1deg); }
+  .exhibit-card:hover{ transform: rotate(0deg) translateY(-4px); transition: transform .25s ease; }
+
+  .exhibit-label{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber-deep);
+    margin-bottom: 14px;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+  }
+  .exhibit-label span.pin{
+    width:8px;height:8px;border-radius:50%;
+    background: var(--amber);
+    box-shadow: 0 0 0 3px rgba(232,163,61,0.2);
+  }
+  .exhibit-card img{
+    width: 100%;
+    height: auto;
+    display:block;
+    border: 1px solid rgba(35,48,60,0.1);
+    background: #fdfcf8;
+  }
+  .exhibit-caption{
+    margin-top: 16px;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+  .exhibit-caption strong{ color: var(--ink); }
+
+  /* ---------- ORDER / PRICING ---------- */
+  section.order{
+    background: var(--paper);
+    color: var(--ink);
+    padding: 90px 0 100px;
+    border-top: 1px solid rgba(35,48,60,0.1);
+  }
+  .order-head h2{
+    font-size: clamp(30px, 4vw, 44px);
+  }
+  .order-head p strong{ color: var(--ink); }
+
+  .order-columns{
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 44px;
+    margin-top: 20px;
+  }
+  @media (max-width: 860px){
+    .order-columns{ grid-template-columns: 1fr; }
+  }
+
+  .mono-label.small{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--amber-deep);
+    margin-bottom: 18px;
+    font-weight: 600;
+  }
+
+  .submit-panel{
+    background: #fff;
+    border: 1px solid rgba(35,48,60,0.14);
+    box-shadow: 0 18px 40px var(--paper-shadow);
+    padding: 30px 28px;
+  }
+  .method-list{
+    display:flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+  .method{
+    display:flex;
+    gap: 16px;
+  }
+  .method-icon{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--amber-deep);
+    flex: 0 0 26px;
+    padding-top: 2px;
+  }
+  .method strong{
+    display:block;
+    font-size: 15.5px;
+    margin-bottom: 5px;
+    color: var(--ink);
+  }
+  .method p{
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+  .code-example{
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    background: var(--navy-deep);
+    color: var(--cyan);
+    padding: 12px 14px;
+    border-radius: 2px;
+    word-break: break-word;
+  }
+  .method code{
+    font-family: 'IBM Plex Mono', monospace;
+    background: rgba(35,48,60,0.08);
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-size: 13px;
+  }
+
+  .contact-panel{
+    display:flex;
+    flex-direction: column;
+  }
+  .contact-btn{
+    display:flex;
+    align-items:center;
+    gap: 14px;
+    text-decoration:none;
+    color: var(--ink);
+    background:#fff;
+    border: 1px solid rgba(35,48,60,0.14);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .contact-btn:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px var(--paper-shadow);
+  }
+  .contact-btn .contact-icon{
+    flex: 0 0 40px;
+    height: 40px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius: 50%;
+  }
+  .contact-btn.whatsapp .contact-icon{ background: #E8F8EE; color: #25A24A; }
+  .contact-btn.email .contact-icon{ background: #EAF1FB; color: #2A6BC4; }
+  .contact-btn strong{ display:block; font-size: 15px; }
+  .contact-btn em{ font-style:normal; font-size: 13px; color: var(--ink-soft); }
+
+  .payment-note{
+    background: var(--navy-deep);
+    color: var(--paper);
+    padding: 22px 22px 26px;
+    margin-top: 10px;
+  }
+  .payment-note .mono-label.small{ color: var(--cyan); margin-bottom: 12px; }
+  .payment-note p{
+    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: rgba(244,241,231,0.75);
+  }
+  .acct{
+    display:flex;
+    align-items:baseline;
+    justify-content: space-between;
+    border-top: 1px dashed rgba(143,214,255,0.35);
+    padding-top: 14px;
+  }
+  .acct-bank{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cyan);
+  }
+  .acct-num{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  /* ---------- COMING SOON ---------- */
+  section.coming{
+    background: var(--navy-deep);
+    padding: 100px 0 110px;
+    position: relative;
+    overflow:hidden;
+  }
+  .coming-grid{
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 64px;
+    align-items: start;
+  }
+  @media (max-width: 860px){
+    .coming-grid{ grid-template-columns: 1fr; }
+  }
+
+  .coming h2{
+    font-size: clamp(26px, 3.4vw, 36px);
+    margin: 0 0 20px;
+    line-height:1.18;
+  }
+  .coming p.lede{
+    font-size: 16.5px;
+    line-height: 1.65;
+    color: rgba(244,241,231,0.78);
+    max-width: 48ch;
+    margin: 0 0 28px;
+  }
+
+  .badge-soon{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--navy-deep);
+    background: var(--cyan);
+    padding: 7px 14px;
+    border-radius: 2px;
+    margin-bottom: 26px;
+  }
+
+  ul.specs{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid rgba(143,214,255,0.22);
+  }
+  ul.specs li{
+    display:flex;
+    gap: 18px;
+    padding: 18px 0;
+    border-bottom: 1px solid rgba(143,214,255,0.22);
+    font-size: 14.5px;
+    line-height:1.55;
+    color: rgba(244,241,231,0.85);
+  }
+  ul.specs li .idx{
+    font-family:'IBM Plex Mono', monospace;
+    color: var(--cyan);
+    flex: 0 0 34px;
+  }
+  ul.specs li strong{
+    display:block;
+    color: var(--paper);
+    margin-bottom: 3px;
+    font-weight:600;
+  }
+
+  .notify-box{
+    border: 1px solid rgba(143,214,255,0.3);
+    padding: 26px 24px;
+    background: rgba(143,214,255,0.04);
+  }
+  .notify-box .mono-label{
+    font-size: 12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color: var(--cyan);
+    margin-bottom: 12px;
+  }
+  .notify-box p{
+    font-size: 15px;
+    color: rgba(244,241,231,0.75);
+    line-height: 1.6;
+    margin: 0 0 18px;
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    padding: 34px 0 40px;
+    border-top: 1px solid rgba(143,214,255,0.15);
+  }
+  footer .wrap{
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 12.5px;
+    color: rgba(244,241,231,0.5);
+    letter-spacing: 0.02em;
+  }
+
+  :focus-visible{
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="blueprint">
+  <nav class="wrap">
+    <div class="brand"><span class="dot"></span> PLOTTED</div>
+    <a class="navlink" href="#order">Get yours plotted</a>
+  </nav>
+
+  <header class="hero wrap">
+    <span class="eyebrow">For network marketers</span>
+    <h1 class="headline">Stop sketching your downline. Start <em>seeing</em> it.</h1>
+    <p class="sub">
+      You already know your network by heart — every recruit, every branch, every layer.
+      The problem is drawing it. We turn what's in your head into a clear picture, so you
+      never hand-sketch a genealogy chart on a napkin again.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#order">Get yours plotted — ₦200 →</a>
+      <a class="btn btn-ghost" href="#exhibits">See how it looks</a>
+    </div>
+
+    <div class="diagram-stage">
+      <span class="tag">Fig. 01 — from scribble to schematic</span>
+      <svg id="morph" viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg">
+        <!-- scribbled hand-drawn version -->
+        <g>
+          <path class="scribble-path" d="M380,40 C 340,70 300,60 250,95 C 220,115 200,130 170,150"/>
+          <path class="scribble-path" d="M380,40 C 400,70 420,65 470,100 C 500,120 510,130 540,150"/>
+          <path class="scribble-path" d="M170,150 C 140,165 120,170 90,185"/>
+          <path class="scribble-path" d="M170,150 C 190,168 205,172 230,188"/>
+          <ellipse class="scribble-node" cx="380" cy="35" rx="34" ry="17"/>
+          <ellipse class="scribble-node" cx="165" cy="152" rx="38" ry="18"/>
+          <ellipse class="scribble-node" cx="545" cy="152" rx="38" ry="18"/>
+          <ellipse class="scribble-node" cx="85" cy="188" rx="30" ry="15"/>
+          <ellipse class="scribble-node" cx="235" cy="190" rx="30" ry="15"/>
+        </g>
+        <!-- clean plotted version -->
+        <g>
+          <line class="clean-line" x1="380" y1="46" x2="250" y2="100" style="animation-delay:0s"/>
+          <line class="clean-line" x1="380" y1="46" x2="510" y2="100" style="animation-delay:0.15s"/>
+          <line class="clean-line" x1="250" y1="118" x2="180" y2="168" style="animation-delay:0.3s"/>
+          <line class="clean-line" x1="250" y1="118" x2="320" y2="168" style="animation-delay:0.4s"/>
+          <line class="clean-line" x1="510" y1="118" x2="510" y2="168" style="animation-delay:0.3s"/>
+
+          <rect class="clean-node" x="345" y="26" width="70" height="30" rx="3" style="animation-delay:0.55s"/>
+          <text class="clean-label" x="362" y="46" style="animation-delay:0.7s">YOU</text>
+
+          <rect class="clean-node" x="215" y="100" width="70" height="30" rx="3" style="animation-delay:0.6s"/>
+          <text class="clean-label" x="223" y="120" style="animation-delay:0.75s">RECRUIT</text>
+
+          <rect class="clean-node" x="475" y="100" width="70" height="30" rx="3" style="animation-delay:0.65s"/>
+          <text class="clean-label" x="483" y="120" style="animation-delay:0.8s">RECRUIT</text>
+
+          <rect class="clean-node" x="145" y="168" width="70" height="30" rx="3" style="animation-delay:0.8s"/>
+          <text class="clean-label" x="157" y="188" style="animation-delay:0.95s">TIER 2</text>
+
+          <rect class="clean-node" x="285" y="168" width="70" height="30" rx="3" style="animation-delay:0.85s"/>
+          <text class="clean-label" x="297" y="188" style="animation-delay:1s">TIER 2</text>
+
+          <rect class="clean-node" x="475" y="168" width="70" height="30" rx="3" style="animation-delay:0.8s"/>
+          <text class="clean-label" x="487" y="188" style="animation-delay:0.95s">TIER 2</text>
+        </g>
+      </svg>
+    </div>
+  </header>
+</div>
+
+<section class="exhibits" id="exhibits">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-kicker">Any size, one clear picture</div>
+      <h2>Whether your network is two people or twenty branches deep.</h2>
+      <p>
+        These are the same kinds of connections marketers draw by hand every week —
+        the only difference is how far they've grown. We plot both the same way: clean, legible, and easy to update.
+      </p>
+    </div>
+
+    <div class="exhibit-grid">
+      <div class="exhibit-card">
+        <div class="exhibit-label">Exhibit A — simple network <span class="pin"></span></div>
+        <img src="images/simple-network.png" alt="A simple network with You at the top connecting to a First Recruit and a Second Recruit.">
+        <div class="exhibit-caption">
+          <strong>One person, two recruits.</strong> Every network starts here — a single point
+          branching into the first few connections.
+        </div>
+      </div>
+
+      <div class="exhibit-card">
+        <div class="exhibit-label">Exhibit B — grown network <span class="pin"></span></div>
+        <img src="images/complex-network.png" alt="A more complex network with You branching into D1, D2, D3, D4, and further sub-branches several tiers deep.">
+        <div class="exhibit-caption">
+          <strong>Same structure, more tiers.</strong> As recruits bring in their own recruits,
+          the picture grows — and it still stays readable.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="order" id="order">
+  <div class="wrap">
+    <div class="section-head order-head">
+      <div class="section-kicker">Pricing &amp; submission</div>
+      <h2>₦200 per project.</h2>
+      <p>That's roughly <strong>$0.15 USD</strong> at today's exchange rate (₦1 ≈ $0.0007 · rates shift daily, so treat this as an estimate). One price, however many people are in your network.</p>
+    </div>
+
+    <div class="order-columns">
+      <div class="submit-panel">
+        <div class="mono-label small">How to send your network</div>
+        <div class="method-list">
+          <div class="method">
+            <span class="method-icon">01</span>
+            <div>
+              <strong>Send a picture</strong>
+              <p>A photo of your hand-drawn sketch, plus your payment receipt — sent on WhatsApp or by email.</p>
+            </div>
+          </div>
+          <div class="method">
+            <span class="method-icon">02</span>
+            <div>
+              <strong>Send it as text</strong>
+              <p>List every connection as <code>Sponsor -&gt; Downline</code>, separated by commas. Example:</p>
+              <div class="code-example">You -&gt; Amaka, Amaka -&gt; Chidi, Amaka -&gt; Tolu, Chidi -&gt; Femi</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-panel">
+        <div class="mono-label small">Reach me directly</div>
+
+        <a class="contact-btn whatsapp" href="https://wa.me/2349042539204" target="_blank" rel="noopener">
+          <span class="contact-icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="20" height="20" fill="currentColor"><path d="M16.02 3C9.4 3 4.02 8.38 4.02 15c0 2.23.61 4.32 1.66 6.12L4 29l8.06-1.63A11.9 11.9 0 0 0 16.02 27C22.64 27 28 21.62 28 15S22.64 3 16.02 3zm0 21.6c-1.9 0-3.68-.53-5.2-1.46l-.37-.22-4.78.97 1-4.66-.24-.38a9.53 9.53 0 0 1-1.5-5.15c0-5.3 4.3-9.6 9.6-9.6 5.29 0 9.59 4.3 9.59 9.6 0 5.29-4.3 9.9-9.6 9.9zm5.28-7.19c-.29-.15-1.7-.84-1.97-.93-.26-.1-.46-.15-.65.14-.19.29-.75.93-.92 1.12-.17.19-.34.22-.63.08-.29-.15-1.23-.45-2.34-1.44-.87-.77-1.45-1.72-1.62-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.5.15-.17.19-.29.29-.48.1-.19.05-.36-.02-.5-.08-.15-.65-1.57-.9-2.15-.24-.57-.48-.5-.65-.5-.17 0-.36-.02-.56-.02-.19 0-.5.07-.77.36-.26.29-1 .98-1 2.39 0 1.41 1.03 2.77 1.17 2.96.15.19 2.02 3.08 4.9 4.32.68.3 1.22.47 1.63.6.68.22 1.31.19 1.8.11.55-.08 1.7-.7 1.94-1.37.24-.68.24-1.26.17-1.37-.07-.12-.26-.19-.55-.34z"/></svg>
+          </span>
+          <span>
+            <strong>WhatsApp</strong>
+            <em>+234 904 253 9204</em>
+          </span>
+        </a>
+
+        <a class="contact-btn email" href="mailto:mikeshede@gmail.com?subject=My%20network%20to%20be%20plotted">
+          <span class="contact-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="4.5" width="19" height="15" rx="1.5"/><path d="M3 6l9 7 9-7"/></svg>
+          </span>
+          <span>
+            <strong>Email</strong>
+            <em>mikeshede@gmail.com</em>
+          </span>
+        </a>
+
+        <div class="payment-note">
+          <div class="mono-label small">Payment</div>
+          <p>Pay ₦200 to the account below, then send your receipt along with your sketch, picture, or text list.</p>
+          <div class="acct">
+            <span class="acct-bank">Moniepoint</span>
+            <span class="acct-num">5270168521</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="coming" id="coming">
+  <div class="wrap">
+    <div class="coming-grid">
+      <div>
+        <span class="badge-soon">● Web format — coming soon</span>
+        <h2>The picture is here. The interactive version is next.</h2>
+        <p class="lede">
+          Today, you can get your network turned into a clean picture. Soon, you'll be able
+          to build and explore it directly on the web — add a recruit, and watch the chart update itself.
+        </p>
+
+        <ul class="specs">
+          <li>
+            <span class="idx">01</span>
+            <div><strong>Add people as you go</strong>Bring on a new recruit and place them under the right person — no redrawing.</div>
+          </li>
+          <li>
+            <span class="idx">02</span>
+            <div><strong>Zoom into any branch</strong>Focus on one leg of your network without losing sight of the whole picture.</div>
+          </li>
+          <li>
+            <span class="idx">03</span>
+            <div><strong>Share a clean link</strong>Send your whole team a chart they can view, not a photo of a napkin.</div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="notify-box">
+        <div class="mono-label">Right now</div>
+        <p>The picture format is available already — send us your list of names and who
+        recruited whom, and we'll return a clear diagram like the exhibits above.</p>
+        <div class="mono-label">Soon</div>
+        <p>The web format, so you can build and update the chart yourself, live.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="blueprint">
+  <div class="wrap">
+    <span>Plotted — networks, drawn properly.</span>
+    <span>₦200 per project (≈ $0.14) · Picture format available now · Web format coming soon</span>
+  </div>
+</footer>
+
+</body>
+<marquee> &copy; Copyright Upgrade™ 2026 </marquee>
+</html>
