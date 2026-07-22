@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foothold — Start where you are</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #181B19;
+    --surface: #21251F;
+    --surface-2: #262B24;
+    --line: #383E36;
+    --bone: #EDE7DC;
+    --bone-dim: #B8B2A4;
+    --brass: #C79847;
+    --brass-dim: #9C7736;
+    --moss: #6B8E76;
+    --moss-dim: #4F6D5C;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--bone);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.5;
+    overflow-x:hidden;
+  }
+  ::selection{ background:var(--brass); color:#14170F; }
+
+  h1,h2,h3{
+    font-family:'Instrument Serif', serif;
+    font-weight:400;
+    letter-spacing:-0.01em;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--brass);
+  }
+  a{color:inherit;}
+  .wrap{max-width:1120px; margin:0 auto; padding:0 28px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+  }
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    background:rgba(24,27,25,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  nav .wrap{
+    display:flex; align-items:center; justify-content:space-between;
+    height:64px;
+  }
+  .logo{
+    font-family:'Instrument Serif', serif;
+    font-size:1.35rem;
+    display:flex; align-items:center; gap:8px;
+  }
+  .logo-mark{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--brass);
+    box-shadow:0 0 0 3px rgba(199,152,71,0.18);
+  }
+  .nav-cta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    letter-spacing:0.04em;
+    border:1px solid var(--brass-dim);
+    color:var(--brass);
+    padding:9px 16px;
+    border-radius:3px;
+    text-decoration:none;
+    transition:all .2s ease;
+  }
+  .nav-cta:hover{ background:var(--brass); color:#14170F; }
+
+  /* ---------- HERO ---------- */
+  header.hero{
+    min-height:100svh;
+    display:flex;
+    align-items:center;
+    position:relative;
+    padding:120px 0 80px;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns: 1.3fr 0.9fr;
+    gap:60px;
+    align-items:center;
+  }
+  .hero-eyebrow{margin-bottom:22px; display:flex; align-items:center; gap:10px;}
+  .hero-eyebrow::before{content:''; width:22px; height:1px; background:var(--brass-dim);}
+  h1.headline{
+    font-size:clamp(2.6rem, 5.4vw, 4.4rem);
+    line-height:1.04;
+    color:var(--bone);
+  }
+  h1.headline em{
+    font-style:italic;
+    color:var(--brass);
+  }
+  .hero-sub{
+    margin-top:26px;
+    max-width:480px;
+    font-size:1.08rem;
+    color:var(--bone-dim);
+  }
+  .hero-actions{
+    margin-top:38px;
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .btn-primary{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.85rem;
+    letter-spacing:0.03em;
+    background:var(--brass);
+    color:#14170F;
+    padding:15px 26px;
+    border-radius:3px;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    transition:transform .2s ease, background .2s ease;
+    border:1px solid var(--brass);
+  }
+  .btn-primary:hover{ background:#D9AC5E; transform:translateY(-1px); }
+  .btn-ghost{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.85rem;
+    color:var(--bone-dim);
+    text-decoration:none;
+    border-bottom:1px solid var(--line);
+    padding-bottom:2px;
+  }
+  .btn-ghost:hover{ color:var(--bone); border-color:var(--bone-dim); }
+
+  /* stepping-stone visual */
+  .stones{
+    position:relative;
+    height:420px;
+  }
+  .stone-path{
+    position:absolute; inset:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    align-items:flex-end;
+  }
+  .stone{
+    display:flex; align-items:center; gap:14px;
+    opacity:0; transform:translateX(24px);
+    animation:stoneIn 0.7s ease forwards;
+  }
+  .stone:nth-child(1){animation-delay:0.15s;}
+  .stone:nth-child(2){align-self:flex-start; animation-delay:0.35s;}
+  .stone:nth-child(3){align-self:center; animation-delay:0.55s;}
+  .stone:nth-child(4){align-self:flex-end; animation-delay:0.75s;}
+  .stone:nth-child(5){align-self:flex-start; margin-left:40px; animation-delay:0.95s;}
+  @keyframes stoneIn{ to{ opacity:1; transform:translateX(0);} }
+  .stone-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.76rem;
+    color:var(--bone-dim);
+    text-align:right;
+    white-space:nowrap;
+  }
+  .stone-dot{
+    width:46px; height:46px;
+    border-radius:9px;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.8rem;
+    color:var(--brass);
+    flex-shrink:0;
+  }
+  .stone:nth-child(5) .stone-dot{ background:var(--brass); color:#14170F; border-color:var(--brass);}
+
+  /* ---------- FOR SECTION ---------- */
+  section{ padding:100px 0; position:relative; }
+  .section-head{ max-width:640px; margin-bottom:56px; }
+  .section-head h2{ font-size:clamp(2rem, 3.6vw, 2.9rem); margin-top:14px; color:var(--bone); }
+  .chips{
+    display:flex; flex-wrap:wrap; gap:10px;
+  }
+  .chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.82rem;
+    padding:10px 16px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    color:var(--bone-dim);
+    background:var(--surface);
+    opacity:0; transform:translateY(10px);
+    transition:opacity .5s ease, transform .5s ease, border-color .2s ease, color .2s ease;
+  }
+  .chip.in{ opacity:1; transform:translateY(0); }
+  .chip:hover{ border-color:var(--brass-dim); color:var(--bone); }
+
+  .for-note{
+    margin-top:40px;
+    font-size:1.02rem;
+    color:var(--bone-dim);
+    max-width:620px;
+    border-left:2px solid var(--brass-dim);
+    padding-left:20px;
+  }
+
+  /* ---------- WHAT'S INSIDE ---------- */
+  .inside-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .inside-card{
+    background:var(--surface);
+    padding:38px 32px;
+    opacity:0; transform:translateY(16px);
+    transition:opacity .6s ease, transform .6s ease;
+  }
+  .inside-card.in{ opacity:1; transform:translateY(0); }
+  .inside-card .num{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--brass);
+    font-size:0.8rem;
+    letter-spacing:0.08em;
+  }
+  .inside-card h3{
+    font-size:1.6rem;
+    margin-top:14px;
+    color:var(--bone);
+  }
+  .inside-card p{
+    margin-top:12px;
+    font-size:0.94rem;
+    color:var(--bone-dim);
+  }
+  .tag-free{
+    display:inline-block;
+    margin-top:18px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.7rem;
+    letter-spacing:0.08em;
+    color:var(--moss);
+    border:1px solid var(--moss-dim);
+    padding:4px 10px;
+    border-radius:12px;
+  }
+
+  /* ---------- HOW IT WORKS (trail) ---------- */
+  .trail{
+    position:relative;
+    padding-left:40px;
+    border-left:1px solid var(--line);
+  }
+  .trail-step{
+    position:relative;
+    padding-bottom:52px;
+    opacity:0; transform:translateY(14px);
+    transition:opacity .6s ease, transform .6s ease;
+  }
+  .trail-step:last-child{ padding-bottom:0; }
+  .trail-step.in{ opacity:1; transform:translateY(0); }
+  .trail-step::before{
+    content:'';
+    position:absolute;
+    left:-45px; top:4px;
+    width:10px; height:10px;
+    border-radius:50%;
+    background:var(--bg);
+    border:2px solid var(--brass-dim);
+  }
+  .trail-step.in::before{ border-color:var(--brass); background:var(--brass); }
+  .trail-step .step-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.74rem;
+    color:var(--bone-dim);
+    letter-spacing:0.06em;
+  }
+  .trail-step h3{
+    font-size:1.5rem;
+    margin-top:8px;
+    color:var(--bone);
+  }
+  .trail-step p{
+    margin-top:8px;
+    color:var(--bone-dim);
+    max-width:560px;
+    font-size:0.96rem;
+  }
+
+  /* ---------- PRICING ---------- */
+  .price-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+  }
+  .price-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:36px;
+    display:flex;
+    flex-direction:column;
+  }
+  .price-card.featured{
+    border-color:var(--brass-dim);
+    background:linear-gradient(160deg, var(--surface-2), var(--surface));
+    position:relative;
+  }
+  .price-card.featured::before{
+    content:'OPTIONAL';
+    position:absolute; top:-11px; left:32px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    letter-spacing:0.1em;
+    background:var(--brass);
+    color:#14170F;
+    padding:3px 10px;
+    border-radius:10px;
+  }
+  .price-card h3{ font-size:1.5rem; color:var(--bone); }
+  .price-amount{
+    font-family:'Instrument Serif', serif;
+    font-size:2.6rem;
+    margin-top:14px;
+    color:var(--brass);
+  }
+  .price-amount span{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.75rem;
+    color:var(--bone-dim);
+    margin-left:6px;
+  }
+  .price-list{
+    margin-top:22px;
+    list-style:none;
+    display:flex; flex-direction:column; gap:11px;
+    flex-grow:1;
+  }
+  .price-list li{
+    font-size:0.92rem;
+    color:var(--bone-dim);
+    padding-left:20px;
+    position:relative;
+  }
+  .price-list li::before{
+    content:'—';
+    position:absolute; left:0; color:var(--brass-dim);
+  }
+  .price-card .btn-primary, .price-card .btn-ghost{ margin-top:26px; align-self:flex-start; }
+
+  .disclosure{
+    margin-top:28px;
+    font-size:0.82rem;
+    color:var(--bone-dim);
+    max-width:720px;
+    line-height:1.6;
+  }
+
+  /* ---------- FINAL CTA ---------- */
+  .final-cta{
+    text-align:center;
+    padding:120px 0 140px;
+  }
+  .final-cta h2{
+    font-size:clamp(2.2rem, 5vw, 3.6rem);
+    max-width:760px;
+    margin:0 auto;
+  }
+  .final-cta .hero-sub{ margin-left:auto; margin-right:auto; text-align:center; }
+  .final-cta .hero-actions{ justify-content:center; margin-top:34px; }
+
+  form.capture{
+    margin-top:40px;
+    display:flex;
+    gap:10px;
+    max-width:440px;
+    margin-left:auto;
+    margin-right:auto;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  input.email-input{
+    flex:1;
+    min-width:220px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--bone);
+    padding:14px 16px;
+    border-radius:3px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:0.94rem;
+  }
+  input.email-input:focus{ outline:2px solid var(--brass); outline-offset:1px; border-color:var(--brass); }
+  .form-note{
+    margin-top:14px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.74rem;
+    color:var(--bone-dim);
+  }
+
+  footer{
+    border-top:1px solid var(--line);
+    padding:36px 0;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    color:var(--bone-dim);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+
+  @media (max-width: 860px){
+    .hero-grid{ grid-template-columns:1fr; }
+    .stones{ height:280px; margin-top:20px; }
+    .inside-grid{ grid-template-columns:1fr; }
+    .price-grid{ grid-template-columns:1fr; }
+  }
+  :focus-visible{ outline:2px solid var(--brass); outline-offset:2px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="logo"><span class="logo-mark"></span>Foothold</div>
+    <a href="#join" class="nav-cta">Get your foothold</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow hero-eyebrow">For anyone standing still, wondering what's next</div>
+      <h1 class="headline">Wherever you're<br>standing, there's<br><em>a foothold</em>.</h1>
+      <p class="hero-sub">A free guide, a community, and — if you want to go further — a step-by-step way to build something of your own. Low capital. Flexible hours. Room to grow at your pace.</p>
+      <div class="hero-actions">
+        <a href="#join" class="btn-primary">Get your foothold →</a>
+        <a href="#inside" class="btn-ghost">See what's inside</a>
+      </div>
+    </div>
+    <div class="stones">
+      <div class="stone-path">
+        <div class="stone"><span class="stone-label">still figuring it out</span><span class="stone-dot">?</span></div>
+        <div class="stone"><span class="stone-dot">↳</span><span class="stone-label">learning something new</span></div>
+        <div class="stone"><span class="stone-label">building on the side</span><span class="stone-dot">↗</span></div>
+        <div class="stone"><span class="stone-dot">$</span><span class="stone-label">earning as you go</span></div>
+        <div class="stone"><span class="stone-dot">✓</span><span class="stone-label">your own footing</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="for">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Who this is for</div>
+      <h2>Every starting point counts.</h2>
+    </div>
+    <div class="chips" id="chip-row">
+      <span class="chip">PhD, between chapters</span>
+      <span class="chip">Undergrad, not sure yet</span>
+      <span class="chip">Fresh graduate</span>
+      <span class="chip">Job hunting</span>
+      <span class="chip">Complete beginner</span>
+      <span class="chip">Self-taught & sharp</span>
+      <span class="chip">Curious about investing</span>
+      <span class="chip">Bored of the 9-to-5</span>
+      <span class="chip">Building on the side</span>
+      <span class="chip">Just want to earn more</span>
+      <span class="chip">Genuinely confused</span>
+      <span class="chip">Ready, just need a plan</span>
+    </div>
+    <p class="for-note">You don't need a degree, a network, or capital to start. You need a next step — something small enough to begin today and real enough to grow into.</p>
+  </div>
+</section>
+
+<section id="inside">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">What's inside</div>
+      <h2>Three ways in, one direction: forward.</h2>
+    </div>
+    <div class="inside-grid">
+      <div class="inside-card"><div class="num">01</div>
+        <h3>The Guide</h3>
+        <p>A plain-language, step-by-step walkthrough for building a business on low capital — the kind you can start with what you already have, and scale as it grows.</p>
+        <span class="tag-free">Free to start</span>
+      </div>
+      <div class="inside-card"><div class="num">02</div>
+        <h3>The Community</h3>
+        <p>A space with people at every stage — first-timers to founders — plus light coaching and accountability so you're not figuring it out alone.</p>
+        <span class="tag-free">Free to join</span>
+      </div>
+      <div class="inside-card"><div class="num">03</div>
+        <h3>The Blueprint</h3>
+        <p>The full step-by-step course for those who want to move faster: structured lessons, done-for-you templates, and a referral track for earning as you share it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">How it works</div>
+      <h2>Five steps. No leaps.</h2>
+    </div>
+    <div class="trail" id="trail">
+      <div class="trail-step">
+        <div class="step-eyebrow">STEP 1 — TODAY</div>
+        <h3>Join, free</h3>
+        <p>Get the free guide and community access. No card, no commitment.</p>
+      </div>
+      <div class="trail-step">
+        <div class="step-eyebrow">STEP 2</div>
+        <h3>Learn the shape of it</h3>
+        <p>Work through the guide at your pace. See what a low-capital business actually looks like, step by step.</p>
+      </div>
+      <div class="trail-step">
+        <div class="step-eyebrow">STEP 3</div>
+        <h3>Decide your pace</h3>
+        <p>Some people stop here with a clear plan. Others want more structure — that's where the Blueprint comes in.</p>
+      </div>
+      <div class="trail-step">
+        <div class="step-eyebrow">STEP 4 — OPTIONAL</div>
+        <h3>Go deeper with the Blueprint</h3>
+        <p>A one-time purchase for the full step-by-step course, templates, and coaching support.</p>
+      </div>
+      <div class="trail-step">
+        <div class="step-eyebrow">STEP 5</div>
+        <h3>Build, and earn as you share it</h3>
+        <p>Apply what you've learned. If you refer others in, you earn a commission on their enrollment — real income tied to real value, not recruitment for its own sake.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">What it costs</div>
+      <h2>Start free. Go further if it's working.</h2>
+    </div>
+    <div class="price-grid">
+      <div class="price-card">
+        <h3>Guide + Community</h3>
+        <div class="price-amount">₦0 <span>FREE</span></div>
+        <ul class="price-list">
+          <li>The full low-capital business guide</li>
+          <li>Community access</li>
+          <li>Basic coaching touchpoints</li>
+          <li>No time limit to decide what's next</li>
+        </ul>
+        <a href="#join" class="btn-ghost">Join free →</a>
+      </div>
+      <div class="price-card featured">
+        <h3>The Blueprint</h3>
+        <div class="price-amount">₦15,000 <span>ONE-TIME</span></div>
+        <ul class="price-list">
+          <li>Everything in the free tier</li>
+          <li>Full step-by-step course</li>
+          <li>Templates and done-for-you tools</li>
+          <li>1:1 coaching support</li>
+          <li>Referral commission track</li>
+        </ul>
+        <a href="#join" class="btn-primary">Get the Blueprint →</a>
+      </div>
+    </div>
+    <p class="disclosure">The Blueprint is optional — the free guide is enough to get moving. Referral income depends on your own effort and results aren't guaranteed; nobody earns simply by joining. We'll never pressure you to buy before you're ready.</p>
+  </div>
+</section>
+
+<section class="final-cta" id="join">
+  <div class="wrap">
+    <div class="eyebrow" style="justify-content:center; display:flex;">Ready when you are</div>
+    <h2>Find your foothold. Start today, free.</h2>
+    <p class="hero-sub">Drop your email and we'll send the guide straight over — no spam, no pitch, just the first step.</p>
+    <form id="captureForm" class="capture">
+      <input class="email-input" type="email" name="fi-sender-email" placeholder="you@email.com" required aria-label="Email address">
+      <button type="submit" class="btn-primary" id="captureBtn">Send it to me</button>
+    </form>
+    <p class="form-note form-note-live" id="formNote">We'll never share your email. Unsubscribe anytime.</p>
+    <script src="https://forminit.com/sdk/v1/forminit.js"></script>
+    <script>
+      (function(){
+        var form = document.getElementById('captureForm');
+        var btn = document.getElementById('captureBtn');
+        var note = document.getElementById('formNote');
+        var forminit = new Forminit();
+        form.addEventListener('submit', function(e){
+          e.preventDefault();
+          btn.textContent = 'Sending…';
+          forminit.submit('bi4tvgnt8nc', new FormData(form)).then(function(result){
+            if(result.error){
+              note.textContent = result.error.message || 'Something went wrong — try again in a moment.';
+              return;
+            }
+            note.textContent = 'Thanks — check your inbox shortly.';
+            form.reset();
+          }).catch(function(){
+            note.textContent = 'Something went wrong — try again in a moment.';
+          }).finally(function(){
+            btn.textContent = 'Send it to me';
+          });
+        });
+      })();
+    </script>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap" style="display:flex; justify-content:space-between; width:100%; flex-wrap:wrap; gap:12px;">
+    <span>Foothold</span>
+    <span>Built for whoever's ready for a next step.</span>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); });
+  }, {threshold:0.2});
+
+  document.querySelectorAll('.chip, .inside-card, .trail-step').forEach(el=>io.observe(el));
+</script>
+
+</body>
+</html>
