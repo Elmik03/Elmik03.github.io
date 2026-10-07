@@ -7,10 +7,13 @@
 <body style="align-items:center;justify-content:center">
     
     <h2 style="color:red;">There's Nothing Here</h2>
-    <p> Please re-check the link</p>
+    <p> Please re-check the link\n You will be redirected to Foothold</p>
     <script>
-        document.onContent
-        window.href ="/get-yours-plotted"
+let Base = location.href.substring(0, location.href.length - 10)
+        
+        window.location.href = Base + "find-your-foothold/"
+
+
     </script>
 </body>
 </html> 
