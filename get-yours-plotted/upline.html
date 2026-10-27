@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Upline by Upgrade</title>
+<meta name="description" content="Turn a team report into a clear tree. Search any ID to see just their downline.">
+<meta name="theme-color" content="#16324F">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%2316324F'/%3E%3Cpath d='M20 13v7M11 26v-6h18v6' stroke='%23E8A33D' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='15' y='6' width='10' height='7' rx='2.5' fill='%23E8A33D'/%3E%3Crect x='6' y='26' width='10' height='7' rx='2.5' fill='%23E8A33D'/%3E%3Crect x='24' y='26' width='10' height='7' rx='2.5' fill='%23E8A33D'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy: #16324F;
+    --navy-deep: #0C2136;
+    --grid-line: rgba(143, 214, 255, 0.16);
+    --grid-line-strong: rgba(143, 214, 255, 0.32);
+    --cyan: #8FD6FF;
+    --paper: #F4F1E7;
+    --paper-shadow: rgba(12, 33, 54, 0.35);
+    --ink: #23303C;
+    --ink-soft: #55606B;
+    --amber: #E8A33D;
+    --amber-deep: #C97F1E;
+    --field: #FDFCF8;
+    --rule: rgba(35, 48, 60, 0.14);
+    --danger: #B3321D;
+    color-scheme: light;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body{
+    margin: 0;
+    background: var(--navy);
+    color: var(--paper);
+    font-family: 'IBM Plex Sans', sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3, .mono{ font-family: 'IBM Plex Mono', monospace; }
+  button, input, select, textarea{ font: inherit; color: inherit; }
+  a{ color: inherit; }
+  [hidden]{ display: none !important; }
+  :focus-visible{ outline: 2px solid var(--amber); outline-offset: 3px; }
+
+  .blueprint{
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px);
+    background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px;
+    background-position: -1px -1px;
+  }
+  .wrap{ max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+
+  /* ---------- NAV (shared with Plotted) ---------- */
+  nav.wrap{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: max(28px, env(safe-area-inset-top));
+    padding-bottom: 28px;
+  }
+  .brand{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    font-size: 15px;
+    text-transform: uppercase;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .brand .dot{
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 0 4px rgba(232,163,61,0.18);
+  }
+  .brand .by{
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: rgba(244,241,231,0.55);
+  }
+  .nav-links{ display: flex; gap: 10px; flex-wrap: wrap; }
+  .navlink{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    text-decoration: none;
+    border: 1px solid rgba(143,214,255,0.4);
+    padding: 8px 16px;
+    border-radius: 2px;
+    transition: all .2s ease;
+  }
+  .navlink:hover{ background: rgba(143,214,255,0.1); border-color: var(--cyan); }
+
+  /* ---------- HERO ---------- */
+  header.hero{ padding-top: 56px; padding-bottom: 72px; }
+  .eyebrow{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--amber);
+    border: 1px solid rgba(232,163,61,0.5);
+    padding: 6px 12px;
+    border-radius: 2px;
+    margin-bottom: 28px;
+  }
+  .eyebrow::before{ content: ""; width: 6px; height: 6px; background: var(--amber); display: inline-block; }
+  h1.headline{
+    font-size: clamp(32px, 5.2vw, 56px);
+    line-height: 1.08;
+    font-weight: 600;
+    margin: 0 0 22px;
+    max-width: 17ch;
+    letter-spacing: -0.01em;
+  }
+  h1.headline em{
+    font-style: normal;
+    color: var(--cyan);
+    text-decoration: underline;
+    text-decoration-color: rgba(143,214,255,0.35);
+    text-decoration-thickness: 3px;
+    text-underline-offset: 6px;
+  }
+  .sub{
+    font-size: 18px;
+    line-height: 1.6;
+    color: rgba(244,241,231,0.8);
+    max-width: 52ch;
+    margin: 0;
+  }
+
+  /* drafting frame around the tool */
+  .stage{
+    margin-top: 48px;
+    position: relative;
+    border: 1px solid var(--grid-line-strong);
+    background: rgba(12,33,54,0.4);
+    padding: 28px 20px 20px;
+    border-radius: 3px;
+  }
+  .stage .tag{
+    position: absolute;
+    top: -12px; left: 20px;
+    background: var(--navy);
+    padding: 0 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cyan);
+  }
+
+  /* ---------- PANELS (paper cards) ---------- */
+  .panel{
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    box-shadow: 0 18px 40px var(--paper-shadow);
+    padding: 26px 26px 30px;
+  }
+  .tabs{ display: flex; gap: 8px; overflow-x: auto; margin-bottom: 18px; padding-bottom: 2px; }
+  .tab{
+    flex: 0 0 auto;
+    background: transparent;
+    border: 1px solid rgba(35,48,60,0.28);
+    border-radius: 2px;
+    padding: 9px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .tab:hover{ border-color: var(--navy); }
+  .tab[aria-selected="true"]{ background: var(--navy); color: var(--paper); border-color: var(--navy); }
+
+  .drop{
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    text-align: center; padding: 38px 16px; cursor: pointer;
+    border: 2px dashed rgba(35,48,60,0.28); border-radius: 2px; background: var(--field);
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .drop:hover, .drop.over{ border-color: var(--amber-deep); background: #FFF8EA; }
+  .drop strong{ font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600; color: var(--ink); }
+  .drop small{ color: var(--ink-soft); font-size: 14px; }
+
+  textarea.big{
+    width: 100%; min-height: 150px; resize: vertical; padding: 12px;
+    background: var(--field); border: 1px solid rgba(35,48,60,0.22); border-radius: 2px;
+    font: 13px/1.5 'IBM Plex Mono', monospace; color: var(--ink);
+  }
+  .help{ margin: 0 0 10px; color: var(--ink-soft); font-size: 14.5px; line-height: 1.55; }
+  .help code{
+    font-family: 'IBM Plex Mono', monospace;
+    background: rgba(35,48,60,0.08);
+    padding: 1px 6px; border-radius: 2px; font-size: 13px; color: var(--ink);
+  }
+  .row{ display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+
+  .btn{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    letter-spacing: 0.02em;
+    padding: 11px 18px;
+    border-radius: 2px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid rgba(35,48,60,0.3);
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .btn:hover{ border-color: var(--navy); transform: translateY(-2px); }
+  .btn.primary{ background: var(--amber); color: var(--navy-deep); font-weight: 600; border-color: var(--amber); }
+  .btn.primary:hover{ box-shadow: 0 8px 20px rgba(232,163,61,0.28); }
+  .linkbtn{
+    background: none; border: 0; padding: 0; cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500;
+    color: var(--navy); text-decoration: underline; text-underline-offset: 3px;
+  }
+  #msg{ margin: 14px 0 0; min-height: 1.3em; font-size: 14.5px; color: var(--ink-soft); }
+  #msg.bad{ color: var(--danger); }
+
+  .search{ display: flex; gap: 10px; flex-wrap: wrap; }
+  .search input[type="text"]{
+    flex: 1 1 200px; min-width: 0; padding: 11px 12px; background: var(--field);
+    border: 1px solid rgba(35,48,60,0.22); border-radius: 2px; color: var(--ink);
+  }
+  #matches{ display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  #matches button{
+    background: var(--paper); border: 1px solid var(--rule); border-radius: 2px;
+    padding: 4px 10px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink);
+  }
+  #matches button:hover{ border-color: var(--navy); }
+  #search-msg{ margin: 8px 0 0; font-size: 14px; color: var(--ink-soft); }
+  .opts{ display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 16px; align-items: center; font-size: 14.5px; color: var(--ink); }
+  .opts label{ display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .opts .lbl{
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink-soft); font-weight: 600; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .opts select{ background: var(--field); border: 1px solid rgba(35,48,60,0.22); border-radius: 2px; padding: 5px 8px; color: var(--ink); }
+  input[type="checkbox"]{ accent-color: var(--navy); width: 16px; height: 16px; }
+
+  .viewbar{ display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 22px 0 12px; }
+  #count{ font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; }
+  .seg{ display: inline-flex; border: 1px solid rgba(35,48,60,0.28); border-radius: 2px; overflow: hidden; }
+  .seg button{
+    background: transparent; border: 0; padding: 7px 16px; cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; color: var(--ink);
+  }
+  .seg button[aria-pressed="true"]{ background: var(--navy); color: var(--paper); }
+
+  #chart-box{ background: #fff; border: 1px solid var(--rule); padding: 10px; overflow: auto; text-align: center; min-height: 120px; }
+  #chart-box img{ max-width: 100%; height: auto; }
+  #chart-box.full img{ max-width: none; }
+  #chart-status{ color: var(--ink-soft); padding: 28px 0; }
+  .actions{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+
+  .tablebox{ overflow: auto; border: 1px solid var(--rule); max-height: 70vh; }
+  table{ border-collapse: collapse; width: 100%; font-size: 14px; color: var(--ink); }
+  th, td{ padding: 9px 12px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--rule); }
+  th{
+    position: sticky; top: 0; background: #ECE8D9;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft);
+  }
+  td.num, th.num{ text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr{ cursor: pointer; }
+  tbody tr:hover{ background: rgba(35,48,60,0.05); }
+  tbody tr.root{ background: rgba(232,163,61,0.18); font-weight: 600; }
+  .tip{ margin: 10px 0 0; font-size: 13px; color: var(--ink-soft); }
+
+  /* ---------- RESULT BAND (paper, like Plotted's exhibits) ---------- */
+  section.workspace{
+    background: var(--paper);
+    color: var(--ink);
+    padding: 72px 0 84px;
+    position: relative;
+  }
+  section.workspace::before{
+    content: "";
+    position: absolute; top: 0; left: 0; right: 0; height: 8px;
+    background: repeating-linear-gradient(90deg, var(--navy) 0 14px, transparent 14px 28px);
+    opacity: 0.15;
+  }
+
+  /* ---------- HANDOFF TO PLOTTED ---------- */
+  section.handoff{ background: var(--navy-deep); padding: 72px 0 80px; }
+  .handoff-grid{ display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 48px; align-items: center; }
+  .handoff h2{ font-size: clamp(24px, 3.2vw, 34px); margin: 0 0 14px; line-height: 1.18; font-weight: 600; }
+  .handoff p{ font-size: 16px; line-height: 1.65; color: rgba(244,241,231,0.78); max-width: 52ch; margin: 0; }
+  .handoff .btn{ justify-self: start; }
+
+  /* ---------- FOOTER (shared with Plotted) ---------- */
+  footer{ padding: 34px 0 max(40px, env(safe-area-inset-bottom)); border-top: 1px solid rgba(143,214,255,0.15); }
+  footer .wrap{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 12.5px;
+    color: rgba(244,241,231,0.6);
+    letter-spacing: 0.02em;
+  }
+  .foot-row{ display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; flex: 1 1 100%; }
+  .foot-links a{ color: var(--cyan); text-decoration: none; margin-left: 18px; }
+  .foot-links a:first-child{ margin-left: 0; }
+  .foot-links a:hover{ text-decoration: underline; }
+  .foot-links a[aria-current="page"]{ color: var(--paper); }
+  .privacy{ max-width: 70ch; margin: 0; }
+
+  @media (max-width: 860px){
+    .handoff-grid{ grid-template-columns: 1fr; gap: 28px; }
+  }
+  @media (max-width: 600px){
+    .wrap{ padding: 0 20px; }
+    nav.wrap{ flex-wrap: wrap; gap: 14px; }
+    .navlink{ padding: 7px 12px; font-size: 12px; }
+    .panel{ padding: 18px 16px 22px; }
+    .stage{ padding: 24px 12px 12px; }
+    header.hero{ padding-top: 36px; padding-bottom: 56px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior: auto; }
+    .btn, .navlink, .drop{ transition: none; }
+    .btn:hover{ transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blueprint">
+  <nav class="wrap">
+    <div class="brand"><span class="dot"></span> Upline <span class="by">by Upgrade</span></div>
+    <div class="nav-links">
+      <a class="navlink" href="index.html">Have it plotted for you</a>
+    </div>
+  </nav>
+
+  <header class="hero wrap">
+    <span class="eyebrow">The web format</span>
+    <h1 class="headline">See your whole team <em>at a glance.</em></h1>
+    <p class="sub">Upload your genealogy report and get a clean, shareable tree. Search any ID to see only that person and everyone below them.</p>
+
+    <div class="stage">
+      <span class="tag">Load your team</span>
+      <section class="panel" aria-label="Load your team">
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" id="tab-pdf" aria-selected="true" data-pane="pdf">PDF report</button>
+          <button class="tab" role="tab" id="tab-table" aria-selected="false" data-pane="table">Paste table</button>
+          <button class="tab" role="tab" id="tab-links" aria-selected="false" data-pane="links">Paste links</button>
+        </div>
+
+        <div id="pane-pdf">
+          <label class="drop" id="drop" for="pdf">
+            <strong>Choose your team PDF</strong>
+            <small>or drop it here. It is read on your device.</small>
+          </label>
+          <input type="file" id="pdf" accept=".pdf,application/pdf" hidden>
+        </div>
+
+        <div id="pane-table" hidden>
+          <p class="help">Copy the rows from your report or an on-screen table and paste them here, including the Layer column.</p>
+          <textarea class="big" id="table-text" placeholder="Kasly ID   Name   Country   Grade   Layer   PBV   GBV   DBV   Acc.PBV&#10;22928320   MICHAEL ...   NG   25%   1   15.00   563.50   148.00   527.10"></textarea>
+          <div class="row"><button class="btn primary" id="build-table" type="button">Build tree</button></div>
+        </div>
+
+        <div id="pane-links" hidden>
+          <p class="help">Already have the connections? Write them as <code>parent--child</code>, separated by commas, semicolons or new lines. Chains work too: <code>a--b--c</code>.</p>
+          <textarea class="big" id="links-text" placeholder="a--b;b--c,a--d"></textarea>
+          <div class="row">
+            <button class="btn primary" id="build-links" type="button">Build tree</button>
+            <button class="linkbtn" id="example" type="button">Use an example</button>
+          </div>
+        </div>
+
+        <p id="msg" role="status"></p>
+      </section>
+    </div>
+  </header>
+</div>
+
+<section class="workspace" id="result" hidden aria-label="Your tree">
+  <div class="wrap">
+    <div class="panel">
+      <form class="search" id="search-form" role="search">
+        <input type="text" id="q" placeholder="Search by ID or name, e.g. 22947588" aria-label="Search by ID or name" autocomplete="off" inputmode="search">
+        <button class="btn primary" type="submit">Show from here</button>
+        <button class="btn" type="button" id="clear-root" hidden>Show everyone</button>
+      </form>
+      <div id="matches"></div>
+      <p id="search-msg" role="status"></p>
+
+      <div class="opts" id="opts-report">
+        <span class="lbl">Show</span>
+        <span id="cols-box" style="display:contents"></span>
+        <label><input type="checkbox" id="opt-grade" checked> Grade</label>
+        <label><input type="checkbox" id="opt-id"> ID</label>
+      </div>
+      <div class="opts">
+        <span class="lbl">Layout</span>
+        <select id="opt-dir" aria-label="Layout direction">
+          <option value="TB">Top to bottom</option>
+          <option value="LR">Left to right</option>
+        </select>
+      </div>
+
+      <div class="viewbar">
+        <div id="count"></div>
+        <div class="seg" role="group" aria-label="View">
+          <button type="button" id="v-chart" aria-pressed="true">Chart</button>
+          <button type="button" id="v-table" aria-pressed="false">Table</button>
+        </div>
+      </div>
+
+      <div id="chart-pane">
+        <div id="chart-box">
+          <div id="chart-status"></div>
+          <img id="chart" alt="Team tree chart" hidden>
+        </div>
+        <div class="actions">
+          <a class="btn" id="open" target="_blank" rel="noopener noreferrer">Open image</a>
+          <button class="btn" id="copy-link" type="button">Copy link</button>
+          <button class="btn" id="copy-dot" type="button">Copy Graphviz code</button>
+          <button class="btn" id="download" type="button">Download</button>
+          <button class="btn" id="fit" type="button">Full size</button>
+        </div>
+      </div>
+
+      <div id="table-pane" hidden>
+        <div class="tablebox"><table id="table"><thead></thead><tbody></tbody></table></div>
+        <p class="tip">Tap a row to show that person and everyone below them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="handoff" id="plotted">
+  <div class="wrap handoff-grid">
+    <div>
+      <h2>Rather have it drawn for you?</h2>
+      <p>Send Plotted a photo of your sketch, or a list of who recruited whom, and get a clean diagram back. It's ₦200 per project, however many people are in your network.</p>
+    </div>
+    <a class="btn primary" href="index.html#order">Get yours plotted — ₦200 →</a>
+  </div>
+</section>
+
+<footer class="blueprint">
+  <div class="wrap">
+    <div class="foot-row">
+      <span>Upline by Upgrade — your team, drawn as a tree.</span>
+      <span class="foot-links"><a href="index.html">Plotted</a><a href="upline.html" aria-current="page">Upline</a></span>
+    </div>
+    <div class="foot-row">
+      <p class="privacy">PDFs are read in your browser. Nothing is uploaded unless the quick reader can't understand your file and the optional AI reader is switched on.</p>
+      <span>&copy; Copyright Upgrade™ 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ---------- Settings ---------- */
+const PROXY_URL = "";   // Optional: your Cloudflare Worker address (turns on the AI reader for unusual PDFs)
+const SMART_MODEL = "gemini-2.5-flash";
+const QC = "https://quickchart.io/graphviz?graph=";
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+const PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const DEFAULT_SHOW = ["PBV", "GBV", "Acc.PBV", "Acc.GBV"];
+const DEFAULT_COLS = ["PBV", "GBV", "DBV", "Acc.PBV", "Acc.GBV"];
+
+/* core:start */
+const titleCase = (s) => String(s || "").toLowerCase().replace(/(^|[\s\-'])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+
+function parseReport(text) {
+  const t = String(text).replace(/[\t\r\n]+/g, " ").replace(/\s+/g, " ");
+  const re = /(?:^| )(\d{6,10}) ([^\d%]+?) ([A-Z]{2}) (\d{1,3})% (\d{1,2})((?: -?[\d,]*\.\d+)+)/g;
+  const found = [];
+  let m;
+  while ((m = re.exec(t))) {
+    found.push({ id: m[1], name: titleCase(m[2].trim()), grade: m[4] + "%", layer: parseInt(m[5], 10), nums: m[6].trim().split(" ") });
+  }
+  if (!found.length) return null;
+  const n = found[0].nums.length;
+  const h = t.match(/Layer ((?:[A-Za-z][A-Za-z.]* )+?)(?=\d{6,10} )/);
+  let cols = h ? h[1].trim().split(" ") : [];
+  if (cols.length !== n) cols = DEFAULT_COLS.slice(0, n).concat(Array.from({ length: Math.max(0, n - DEFAULT_COLS.length) }, (_, i) => "Col" + (i + 6)));
+  const rows = found.map((f) => {
+    const vals = {};
+    cols.forEach((c, i) => { if (f.nums[i] != null) vals[c] = f.nums[i]; });
+    return { id: f.id, name: f.name, grade: f.grade, layer: f.layer, vals };
+  });
+  return { rows, cols };
+}
+
+function modelFromRows(rows, cols) {
+  const nodes = new Map(), edges = [], stack = [];
+  rows.forEach((r) => {
+    const id = String(r.id);
+    if (nodes.has(id)) return;
+    const layer = Math.max(1, parseInt(r.layer, 10) || 1);
+    nodes.set(id, { id, name: r.name, grade: r.grade, layer, vals: r.vals || {}, children: [] });
+    if (layer > 1) {
+      let l = layer - 1;
+      while (l > 0 && !stack[l]) l--;
+      if (l > 0) { edges.push([stack[l], id]); nodes.get(stack[l]).children.push(id); }
+    }
+    stack[layer] = id;
+    stack.length = layer + 1;
+  });
+  return { kind: "report", nodes, edges, cols };
+}
+
+function parseLinks(text) {
+  const nodes = new Map(), edges = [], seen = new Set();
+  const add = (id) => { if (!nodes.has(id)) nodes.set(id, { id, name: id, grade: "", layer: 0, vals: {}, children: [] }); };
+  String(text).split(/[;,\n]+/).forEach((piece) => {
+    const parts = piece.split(/--|->|\u2013|\u2014/).map((x) => x.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
+    if (parts.length === 1) add(parts[0]);
+    for (let i = 0; i < parts.length - 1; i++) {
+      add(parts[i]); add(parts[i + 1]);
+      const key = parts[i] + "\u0001" + parts[i + 1];
+      if (parts[i] !== parts[i + 1] && !seen.has(key)) {
+        seen.add(key);
+        edges.push([parts[i], parts[i + 1]]);
+        nodes.get(parts[i]).children.push(parts[i + 1]);
+      }
+    }
+  });
+  if (!edges.length && nodes.size < 1) return null;
+  return { kind: "links", nodes, edges, cols: [] };
+}
+
+function makeView(model, rootId) {
+  if (!rootId) return { ids: [...model.nodes.keys()], edges: model.edges };
+  const seen = new Set([rootId]), queue = [rootId];
+  while (queue.length) {
+    const cur = queue.shift();
+    (model.nodes.get(cur).children || []).forEach((c) => { if (!seen.has(c)) { seen.add(c); queue.push(c); } });
+  }
+  return {
+    ids: [...model.nodes.keys()].filter((id) => seen.has(id)),
+    edges: model.edges.filter(([a, b]) => seen.has(a) && seen.has(b)),
+  };
+}
+
+function dotFor(model, view, o, rootId) {
+  const clean = (s) => String(s).replace(/\\/g, "").replace(/"/g, "'");
+  const L = ["graph {"];
+  if (o.dir === "LR") L.push("  rankdir=LR;");
+  L.push('  node [shape=box, style=rounded, fontname="Arial", fontsize=12];');
+  view.ids.forEach((id) => {
+    const n = model.nodes.get(id);
+    let label;
+    if (model.kind === "links") label = clean(n.name);
+    else {
+      label = clean(n.name) + (o.showGrade && n.grade ? " (" + clean(n.grade) + ")" : "");
+      if (o.showId) label += "\\nID: " + clean(id);
+      o.cols.forEach((c) => { if (n.vals[c] != null) label += "\\n" + clean(c) + ": " + clean(n.vals[c]); });
+    }
+    const hl = rootId && id === rootId ? ', style="rounded,filled", fillcolor="#fff3b0"' : "";
+    L.push('  "' + clean(id) + '" [label="' + label + '"' + hl + "];");
+  });
+  view.edges.forEach(([a, b]) => L.push('  "' + clean(a) + '" -- "' + clean(b) + '";'));
+  L.push("}");
+  return L.join("\n");
+}
+
+function resolveQuery(model, q) {
+  q = String(q).trim();
+  if (!q) return { all: true };
+  if (model.nodes.has(q)) return { id: q };
+  const ql = q.toLowerCase();
+  const hits = [...model.nodes.values()].filter((n) => n.id.includes(q) || n.name.toLowerCase().includes(ql));
+  if (hits.length === 1) return { id: hits[0].id };
+  if (hits.length > 1) return { matches: hits.slice(0, 8) };
+  return { none: true };
+}
+/* core:end */
+
+/* ---------- App ---------- */
+const $ = (id) => document.getElementById(id);
+let model = null, rootId = "", currentUrl = "", currentDot = "", currentSrc = "", chartToken = 0;
+const opts = { cols: [], showGrade: true, showId: false, dir: "TB" };
+
+function say(text, bad) { const m = $("msg"); m.textContent = text || ""; m.className = bad ? "bad" : ""; }
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error("Couldn't load the PDF reader. Check your connection."));
+    document.head.appendChild(s);
+  });
+}
+
+async function readPdfText(file) {
+  if (!window.pdfjsLib) await loadScript(PDFJS);
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+  const doc = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  let out = "";
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const tc = await page.getTextContent();
+    out += tc.items.map((i) => i.str).join(" ") + " ";
+  }
+  return out;
+}
+
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",")[1]);
+    r.onerror = () => reject(new Error("Couldn't read the file."));
+    r.readAsDataURL(file);
+  });
+}
+
+async function smartRead(file) {
+  if (file.size > 8 * 1024 * 1024) throw new Error("That PDF is too large for the AI reader (8 MB limit).");
+  const prompt = 'Extract every row of the genealogy / team table in this PDF, in the exact order the rows appear. ' +
+    'Return ONLY a JSON array. Each item: {"id": string, "name": string, "grade": string (for example "25%"), "layer": integer, ' +
+    '"values": object mapping each numeric column header exactly as printed (for example PBV, GBV, DBV, Acc.PBV, Acc.GBV) to its value as printed}. ' +
+    'Do not skip, merge or invent rows.';
+  const body = JSON.stringify({
+    contents: [{ role: "user", parts: [{ inlineData: { mimeType: "application/pdf", data: await toBase64(file) } }, { text: prompt }] }],
+    generationConfig: { responseMimeType: "application/json", temperature: 0 },
+  });
+  const url = PROXY_URL.replace(/\/$/, "") + "/v1beta/models/" + SMART_MODEL + ":generateContent";
+  let res;
+  for (let i = 0; i < 3; i++) {
+    res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body });
+    if (res.status !== 503 && res.status !== 500) break;
+    await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+  }
+  if (!res.ok) {
+    if (res.status === 429) throw new Error("The AI reader is busy right now (free limit reached). Try again in a minute.");
+    throw new Error("The AI reader failed (" + res.status + ").");
+  }
+  const j = await res.json();
+  const txt = (j.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("");
+  let arr;
+  try { arr = JSON.parse(txt.replace(/```json|```/g, "").trim()); } catch { throw new Error("The AI reader couldn't make sense of that file."); }
+  if (!Array.isArray(arr) || !arr.length) throw new Error("No team rows were found in that file.");
+  const cols = [];
+  const rows = arr.map((r) => {
+    const vals = {};
+    Object.keys(r.values || {}).forEach((k) => { vals[k] = String(r.values[k]); if (!cols.includes(k)) cols.push(k); });
+    return { id: String(r.id), name: titleCase(r.name), grade: String(r.grade || "").replace(/\s/g, ""), layer: parseInt(r.layer, 10) || 1, vals };
+  });
+  return { rows, cols };
+}
+
+async function handlePdf(file) {
+  if (!file) return;
+  say("Reading " + file.name + "...");
+  try {
+    let parsed = parseReport(await readPdfText(file));
+    if (!parsed && PROXY_URL) { say("Quick reader couldn't match the layout. Trying the AI reader..."); parsed = await smartRead(file); }
+    if (!parsed) { say("Couldn't find team rows in that PDF. Try the Paste table tab instead.", true); return; }
+    setModel(modelFromRows(parsed.rows, parsed.cols));
+    say("Found " + parsed.rows.length + " people in " + file.name + ".");
+  } catch (e) { say(e.message || "Couldn't read that file.", true); }
+}
+
+/* ---------- Render ---------- */
+function setModel(m) {
+  model = m; rootId = ""; $("q").value = ""; $("search-msg").textContent = ""; $("matches").innerHTML = "";
+  const box = $("cols-box");
+  box.innerHTML = "";
+  let pre = DEFAULT_SHOW.filter((c) => m.cols.includes(c));
+  if (!pre.length) pre = m.cols.slice(0, 4);
+  opts.cols = pre.slice();
+  m.cols.forEach((c) => {
+    const l = document.createElement("label");
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.value = c; cb.checked = pre.includes(c);
+    cb.addEventListener("change", () => {
+      opts.cols = [...box.querySelectorAll("input:checked")].map((x) => x.value);
+      refresh();
+    });
+    l.append(cb, document.createTextNode(" " + c));
+    box.appendChild(l);
+  });
+  $("opts-report").hidden = m.kind === "links";
+  $("result").hidden = false;
+  refresh();
+  $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function refresh() {
+  if (!model) return;
+  const v = makeView(model, rootId);
+  currentDot = dotFor(model, v, opts, rootId);
+  currentUrl = QC + encodeURIComponent(currentDot);
+  const word = model.kind === "links" ? "nodes" : "people";
+  const rn = rootId ? model.nodes.get(rootId) : null;
+  $("count").textContent = rn
+    ? rn.name + " and " + (v.ids.length - 1) + " below"
+    : v.ids.length + " " + word;
+  $("clear-root").hidden = !rootId;
+  $("open").href = currentUrl;
+  loadChart(currentUrl, currentDot);
+  renderTable(v);
+}
+
+async function loadChart(url, dot) {
+  const token = ++chartToken;
+  const img = $("chart"), st = $("chart-status");
+  img.hidden = true; st.hidden = false; st.textContent = "Drawing chart...";
+  let src = url;
+  if (url.length > 7000) {
+    try {
+      const res = await fetch("https://quickchart.io/graphviz", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ graph: dot, layout: "dot", format: "png" }),
+      });
+      if (!res.ok) throw new Error("x");
+      src = URL.createObjectURL(await res.blob());
+    } catch { /* fall back to the long link */ }
+  }
+  if (token !== chartToken) return;
+  currentSrc = src;
+  img.onload = () => { if (token === chartToken) { st.hidden = true; img.hidden = false; } };
+  img.onerror = () => {
+    if (token !== chartToken) return;
+    st.textContent = "The chart didn't load. For a very large team, use Copy Graphviz code and paste it at quickchart.io/graphviz.";
+  };
+  img.src = src;
+}
+
+function renderTable(v) {
+  const thead = $("table").tHead, tbody = $("table").tBodies[0];
+  thead.innerHTML = ""; tbody.innerHTML = "";
+  const heads = model.kind === "links" ? ["Node", "Leads to"] : ["ID", "Name", "Grade", "Layer"].concat(model.cols);
+  const tr = document.createElement("tr");
+  heads.forEach((h, i) => {
+    const th = document.createElement("th");
+    th.textContent = h;
+    if (model.kind === "report" && i >= 3) th.className = "num";
+    tr.appendChild(th);
+  });
+  thead.appendChild(tr);
+  v.ids.forEach((id) => {
+    const n = model.nodes.get(id);
+    const row = document.createElement("tr");
+    row.tabIndex = 0;
+    if (id === rootId) row.className = "root";
+    const cells = model.kind === "links"
+      ? [n.name, n.children.join(", ")]
+      : [id, n.name, n.grade, String(n.layer)].concat(model.cols.map((c) => (n.vals[c] != null ? n.vals[c] : "")));
+    cells.forEach((c, i) => {
+      const td = document.createElement("td");
+      td.textContent = c;
+      if (model.kind === "report" && i >= 3) td.className = "num";
+      row.appendChild(td);
+    });
+    const go = () => { setRoot(id); setView("chart"); };
+    row.addEventListener("click", go);
+    row.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+    tbody.appendChild(row);
+  });
+}
+
+function setRoot(id) {
+  rootId = id || "";
+  $("q").value = id || "";
+  $("matches").innerHTML = ""; $("search-msg").textContent = "";
+  refresh();
+}
+
+function setView(which) {
+  $("chart-pane").hidden = which !== "chart";
+  $("table-pane").hidden = which !== "table";
+  $("v-chart").setAttribute("aria-pressed", String(which === "chart"));
+  $("v-table").setAttribute("aria-pressed", String(which === "table"));
+}
+
+async function copy(text, btn, label) {
+  try { await navigator.clipboard.writeText(text); btn.textContent = "Copied"; } catch { btn.textContent = "Copy failed"; }
+  setTimeout(() => (btn.textContent = label), 1500);
+}
+
+/* ---------- Wiring ---------- */
+document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach((x) => x.setAttribute("aria-selected", String(x === t)));
+  ["pdf", "table", "links"].forEach((p) => { $("pane-" + p).hidden = p !== t.dataset.pane; });
+  say("");
+}));
+
+$("pdf").addEventListener("change", (e) => { handlePdf(e.target.files[0]); e.target.value = ""; });
+const drop = $("drop");
+["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => handlePdf(e.dataTransfer.files[0]));
+
+$("build-table").addEventListener("click", () => {
+  const parsed = parseReport($("table-text").value);
+  if (!parsed) { say("Couldn't find team rows. Paste the rows with ID, name, country, grade, layer and numbers.", true); return; }
+  setModel(modelFromRows(parsed.rows, parsed.cols));
+  say("Found " + parsed.rows.length + " people.");
+});
+$("build-links").addEventListener("click", () => {
+  const m = parseLinks($("links-text").value);
+  if (!m || !m.nodes.size) { say("Write at least one link, like a--b.", true); return; }
+  setModel(m);
+  say("Built a tree with " + m.nodes.size + " nodes.");
+});
+$("example").addEventListener("click", () => { $("links-text").value = "a--b;b--c,a--d"; });
+
+$("search-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!model) return;
+  const r = resolveQuery(model, $("q").value);
+  const msg = $("search-msg"), box = $("matches");
+  box.innerHTML = ""; msg.textContent = "";
+  if (r.all) setRoot("");
+  else if (r.id) setRoot(r.id);
+  else if (r.none) msg.textContent = "No match for that ID or name.";
+  else {
+    msg.textContent = "Several matches. Pick one:";
+    r.matches.forEach((n) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = n.name === n.id ? n.id : n.name + " (" + n.id + ")";
+      b.addEventListener("click", () => setRoot(n.id));
+      box.appendChild(b);
+    });
+  }
+});
+$("clear-root").addEventListener("click", () => setRoot(""));
+
+$("opt-grade").addEventListener("change", (e) => { opts.showGrade = e.target.checked; refresh(); });
+$("opt-id").addEventListener("change", (e) => { opts.showId = e.target.checked; refresh(); });
+$("opt-dir").addEventListener("change", (e) => { opts.dir = e.target.value; refresh(); });
+$("v-chart").addEventListener("click", () => setView("chart"));
+$("v-table").addEventListener("click", () => setView("table"));
+$("copy-link").addEventListener("click", (e) => copy(currentUrl, e.target, "Copy link"));
+$("copy-dot").addEventListener("click", (e) => copy(currentDot, e.target, "Copy Graphviz code"));
+$("fit").addEventListener("click", (e) => {
+  const full = $("chart-box").classList.toggle("full");
+  e.target.textContent = full ? "Fit to screen" : "Full size";
+});
+$("download").addEventListener("click", async () => {
+  try {
+    const blob = await (await fetch(currentSrc)).blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "upline-tree." + (blob.type.includes("svg") ? "svg" : "png");
+    document.body.appendChild(a); a.click(); a.remove();
+  } catch { window.open(currentSrc || currentUrl, "_blank"); }
+});
+</script>
+</body>
+</html>
